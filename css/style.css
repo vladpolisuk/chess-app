@@ -3,3 +3,122 @@
 * {
 	font-family: 'Roboto', sans-serif;
 }
+
+.game {
+	padding-top: 20px;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	flex-direction: column;
+}
+
+.game__header {
+	margin-bottom: 10px;
+}
+
+.game__fen {
+	width: 100%;
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	margin-bottom: 20px;
+}
+
+.fen-h2 {
+	margin-right: 10px;
+	margin-bottom: 0;
+}
+
+.fen-input {
+	max-width: 600px;
+	margin-right: 10px;
+	width: 100%;
+}
+
+.game__table {
+	display: flex;
+	align-items: flex-start;
+	justify-content: center;
+}
+
+.game__board {
+	min-width: 480px;
+	height: 480px;
+	border: 2px solid #cecece;
+	margin-right: 15px;
+	border-radius: 5px;
+	-webkit-border-radius: 5px;
+	-moz-border-radius: 5px;
+	-ms-border-radius: 5px;
+	-o-border-radius: 5px;
+}
+
+.game__board tr:nth-child(even) td:nth-child(odd) {
+	background: orange;
+	color: orange;
+}
+
+.game__board tr:nth-child(odd) td:nth-child(even) {
+	background: orange;
+	color: orange;
+}
+
+.board__file {
+	position: relative;
+	margin: 0;
+	padding: 0;
+	width: 60px;
+	height: 60px;
+}
+
+.board__file-selected {
+	box-shadow: 0 0 0px 2px inset #935f00;
+}
+
+.form-floating {
+	margin-bottom: 20px;
+}
+
+.floatingSelect {
+	padding-left: 12px !important;
+}
+
+.info {
+	margin-bottom: 20px;
+}
+
+.p-info {
+	margin-bottom: 2px;
+}
+
+.actions {
+	display: flex;
+	flex-direction: column;
+	align-items: flex-start;
+	justify-content: flex-start;
+}
+
+.action-btn {
+	color: white !important;
+	margin-bottom: 10px;
+	display: flex !important;
+	align-items: center;
+	justify-content: center;
+	width: max-content;
+}
+
+.action-btn__text {
+	color: inherit;
+	margin-right: 5px;
+	margin-bottom: 0;
+}
+
+.piece {
+	position: absolute;
+	left: 0;
+	top: 0;
+}
+
+#game-status {
+	display: none;
+}
