@@ -201,7 +201,8 @@ const MIRROR64 = (sq) => {
 const GameController = {
     engineSide: COLOURS.BOTH,
     playerSide: COLOURS.BOTH,
-    gameOver: BOOL.FALSE
+    gameOver: BOOL.FALSE,
+    flippedBoard: 0
 }
 
 const UserMove = {

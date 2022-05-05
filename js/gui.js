@@ -4,6 +4,15 @@ let tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
     return new bootstrap.Tooltip(tooltipTriggerEl)
 })
 
+const MirrorFiles = [FILES.FILE_H, FILES.FILE_G, FILES.FILE_F, FILES.FILE_E, FILES.FILE_D, FILES.FILE_C, FILES.FILE_B, FILES.FILE_A];
+const MirrorRanks = [RANKS.RANK_8, RANKS.RANK_7, RANKS.RANK_6, RANKS.RANK_5, RANKS.RANK_4, RANKS.RANK_3, RANKS.RANK_2, RANKS.RANK_1];
+
+const MIRROR120 = (sq) => {
+    var file = MirrorFiles[FilesBoard[sq]];
+    var rank = MirrorRanks[RanksBoard[sq]];
+    return FR2SQ(file, rank);
+}
+
 $("#set-fen").click(() => {
     const value = $(".fen-input").val();
     if (!value) return;
@@ -21,6 +30,11 @@ $('#take-button').click(() => {
 $('#newgame-button').click(() => {
     NewGame(START_FEN);
 })
+
+$("#flip-button").click(() => {
+    GameController.flippedBoard ^= 1;
+    SetInitialBoardPieces();
+});
 
 const NewGame = (fenString) => {
     ParseFen(fenString);
@@ -44,6 +58,10 @@ const SetInitialBoardPieces = () => {
         sq120 = SQ120(sq);
         piece = GameBoard.pieces[sq120];
 
+        if (GameController.flippedBoard === BOOL.TRUE) {
+            sq120 = MIRROR120(sq120);
+        }
+
         if (piece >= PIECES.WHITE_PAWN && piece <= PIECES.BLACK_KING) {
             AddGUIPiece(sq120, piece)
         }
@@ -51,12 +69,14 @@ const SetInitialBoardPieces = () => {
 }
 
 const DeselectSq = (sq) => {
+    if (GameController.flippedBoard === BOOL.TRUE) sq = MIRROR120(sq);
     const rank = `rank_${RanksBoard[sq] + 1}`;
     const file = `file_${FilesBoard[sq] + 1}`;
     $(`.${rank}.${file}`).removeClass('board__file-selected')
 }
 
 const SelectSq = (sq) => {
+    if (GameController.flippedBoard === BOOL.TRUE) sq = MIRROR120(sq)
     const rank = `rank_${RanksBoard[sq] + 1}`;
     const file = `file_${FilesBoard[sq] + 1}`;
     $(`.${rank}.${file}`).addClass('board__file-selected')
@@ -71,6 +91,7 @@ const ClickedSquare = (pageX, pageY) => {
     let file = Math.floor((pageX - workedX) / 60);
     let rank = 7 - Math.floor((pageY - workedY) / 60);
     let sq = FR2SQ(file, rank);
+    if (GameController.flippedBoard) sq = MIRROR120(sq);
     console.log(`Clicked sq ${PrintSq(sq)}`);
     SelectSq(sq);
     return sq;
@@ -101,6 +122,9 @@ const MakeUserMove = () => {
         console.log(`User Move: ${PrintSq(UserMove.from)}${PrintSq(UserMove.to)}`);
         let parsed = ParseMove(UserMove.from, UserMove.to);
 
+        DeselectSq(UserMove.from)
+        DeselectSq(UserMove.to)
+
         if (parsed !== NOMOVE) {
             MakeMove(parsed);
             PrintBoard();
@@ -108,9 +132,6 @@ const MakeUserMove = () => {
             CheckAndSet();
             PreSearch();
         }
-
-        DeselectSq(UserMove.from)
-        DeselectSq(UserMove.to)
 
         UserMove.from = SQUARES.NO_SQ;
         UserMove.to = SQUARES.NO_SQ;
@@ -135,22 +156,34 @@ const MoveGUIPiece = (move) => {
     const from = FROMSQ(move);
     const to = TOSQ(move);
 
-    if (move & MFLAGEP) {
-        let epRemove;
-        if (GameBoard.side === COLOURS.BLACK) epRemove = to - 10;
-        else epRemove = to + 10;
-        RemoveGUIPiece(epRemove);
-    } else if (CAPTURED(move)) {
-        RemoveGUIPiece(to);
+    let flippedFrom = from;
+    let flippedTo = to;
+    let epWhite = -10;
+    let epBlack = 10;
+
+    if (GameController.flippedBoard == BOOL.TRUE) {
+        flippedFrom = MIRROR120(from);
+        flippedTo = MIRROR120(to);
+        epWhite = 10;
+        epBlack = -10;
     }
 
-    let rankFrom = RanksBoard[from];
-    let rankTo = RanksBoard[to]
+    if (move & MFLAGEP) {
+        let epRemove;
+        if (GameBoard.side === COLOURS.BLACK) epRemove = flippedTo + epWhite;
+        else epRemove = flippedTo + epBlack;
+        RemoveGUIPiece(epRemove);
+    } else if (CAPTURED(move)) {
+        RemoveGUIPiece(flippedTo);
+    }
+
+    let rankFrom = RanksBoard[flippedFrom];
+    let rankTo = RanksBoard[flippedTo]
     const rankNameFrom = `rank_${rankFrom + 1}`;
     const rankNameTo = `rank_${rankTo + 1}`;
 
-    let fileFrom = FilesBoard[from];
-    let fileTo = FilesBoard[to]
+    let fileFrom = FilesBoard[flippedFrom];
+    let fileTo = FilesBoard[flippedTo]
     const fileNameFrom = `file_${fileFrom + 1}`;
     const fileNameTo = `file_${fileTo + 1}`;
 
@@ -163,30 +196,61 @@ const MoveGUIPiece = (move) => {
     })
 
     if (move & MFLAGCA) {
-        switch (to) {
-            case SQUARES.G1:
-                RemoveGUIPiece(SQUARES.H1);
-                AddGUIPiece(SQUARES.F1, PIECES.WHITE_ROOK);
-                break;
+        if (GameController.flippedBoard == BOOL.TRUE) {
+            switch (to) {
+                case SQUARES.G1:
+                    RemoveGUIPiece(MIRROR120(SQUARES.H1));
+                    AddGUIPiece(MIRROR120(SQUARES.F1), PIECES.WHITE_ROOK);
+                    break;
 
-            case SQUARES.C1:
-                RemoveGUIPiece(SQUARES.A1);
-                AddGUIPiece(SQUARES.D1, PIECES.WHITE_ROOK);
-                break;
+                case SQUARES.C1:
+                    RemoveGUIPiece(MIRROR120(SQUARES.A1));
+                    AddGUIPiece(MIRROR120(SQUARES.D1), PIECES.WHITE_ROOK);
+                    break;
 
-            case SQUARES.G8:
-                RemoveGUIPiece(SQUARES.H8);
-                AddGUIPiece(SQUARES.F8, PIECES.BLACK_ROOK);
-                break;
+                case SQUARES.G8:
+                    RemoveGUIPiece(MIRROR120(SQUARES.H8));
+                    AddGUIPiece(MIRROR120(SQUARES.F8), PIECES.BLACK_ROOK);
+                    break;
 
-            case SQUARES.C8:
-                RemoveGUIPiece(SQUARES.A8);
-                AddGUIPiece(SQUARES.D8, PIECES.BLACK_ROOK);
-                break;
+                case SQUARES.C8:
+                    RemoveGUIPiece(MIRROR120(SQUARES.A8));
+                    AddGUIPiece(MIRROR120(SQUARES.D8), PIECES.BLACK_ROOK);
+                    break;
+            }
+        } else {
+            switch (to) {
+                case SQUARES.G1:
+                    RemoveGUIPiece(SQUARES.H1);
+                    AddGUIPiece(SQUARES.F1, PIECES.WHITE_ROOK);
+                    break;
+
+                case SQUARES.C1:
+                    RemoveGUIPiece(SQUARES.A1);
+                    AddGUIPiece(SQUARES.D1, PIECES.WHITE_ROOK);
+                    break;
+
+                case SQUARES.G8:
+                    RemoveGUIPiece(SQUARES.H8);
+                    AddGUIPiece(SQUARES.F8, PIECES.BLACK_ROOK);
+                    break;
+
+                case SQUARES.C8:
+                    RemoveGUIPiece(SQUARES.A8);
+                    AddGUIPiece(SQUARES.D8, PIECES.BLACK_ROOK);
+                    break;
+            }
         }
     } else if (PROMOTED(move)) {
         RemoveGUIPiece(to);
         AddGUIPiece(to, PROMOTED(move));
+    }
+
+    let prom = PROMOTED(move);
+
+    if (prom !== PIECES.EMPTY) {
+        RemoveGUIPiece(flippedTo);
+        AddGUIPiece(flippedTo, prom);
     }
 }
 
@@ -313,7 +377,6 @@ $('#search-button').click(() => {
 
 const StartSearch = () => {
     SearchController.depth = MAXDEPTH;
-    let time = $.now();
     let thinkingTime = $('.thinkingTimeChoice').val();
     SearchController.time = parseInt(thinkingTime) * 1000;
     SearchPosition();
